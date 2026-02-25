@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
 	import FileGrid from '$lib/components/FileGrid.svelte';
-	import { TextMorph } from 'torph/svelte';
+	import TextMorph from '$lib/components/TextMorph.svelte';
 	import { fly, scale, fade } from 'svelte/transition';
 
 	let { data } = $props();

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { TextMorph } from 'torph/svelte';
+	import TextMorph from '$lib/components/TextMorph.svelte';
 	import { fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 

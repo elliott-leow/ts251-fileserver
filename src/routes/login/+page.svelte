@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { TextMorph } from 'torph/svelte';
+	import TextMorph from '$lib/components/TextMorph.svelte';
 	import GradientBackground from '$lib/components/GradientBackground.svelte';
 	import { fly, scale } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
