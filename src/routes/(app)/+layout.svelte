@@ -1,6 +1,5 @@
 <script>
 	import GradientBackground from '$lib/components/GradientBackground.svelte';
-	import Header from '$lib/components/Header.svelte';
 	import { page } from '$app/stores';
 	import { fade } from 'svelte/transition';
 
@@ -9,7 +8,6 @@
 
 <GradientBackground />
 <div class="app-shell">
-	<Header />
 	<main>
 		{#key $page.url.pathname}
 			<div class="page-transition" in:fade={{ duration: 200, delay: 100 }} out:fade={{ duration: 100 }}>
@@ -30,7 +28,7 @@
 	main {
 		flex: 1;
 		overflow-y: auto;
-		padding: 0 1.5rem 1.5rem;
+		padding: 1.25rem 1.5rem 1.5rem;
 	}
 
 	.page-transition {

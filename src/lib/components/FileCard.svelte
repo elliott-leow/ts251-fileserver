@@ -3,12 +3,15 @@
 	import { elasticOut } from 'svelte/easing';
 	import { getFileIcon, formatSize, formatDate } from '$lib/utils/format';
 
-	let { file, index = 0, onPreview = null }: {
+	let { file, index = 0, onPreview = null, onDelete = null, isDeleting = false }: {
 		file: any;
 		index?: number;
 		onPreview?: ((file: any) => void) | null;
+		onDelete?: ((file: any) => void) | null;
+		isDeleting?: boolean;
 	} = $props();
 
+	let showConfirm = $state(false);
 	let icon = $derived(getFileIcon(file.type));
 	let href = $derived(file.isDirectory ? `/browse${file.path}` : null);
 
@@ -28,10 +31,24 @@
 			window.location.href = `/api/download${file.path}`;
 		}
 	}
+
+	function handleDeleteClick(e: MouseEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (showConfirm) {
+			onDelete?.(file);
+			showConfirm = false;
+		} else {
+			showConfirm = true;
+			// Auto-hide confirm after 3s
+			setTimeout(() => { showConfirm = false; }, 3000);
+		}
+	}
 </script>
 
 <div
 	class="file-card glass"
+	class:deleting={isDeleting}
 	in:fly={{ y: 20, duration: 400, delay: Math.min(index * 30, 300), easing: elasticOut }}
 	role="button"
 	tabindex="0"
@@ -52,16 +69,39 @@
 				{:else}
 					{formatSize(file.size)}
 				{/if}
-				<span class="dot">·</span>
+				<span class="dot">&middot;</span>
 				{formatDate(file.modified)}
 			</span>
 		</div>
 	</a>
-	<button class="download-btn" onclick={handleDownload} title={file.isDirectory ? 'Download as ZIP' : 'Download'}>
-		<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-			<path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-		</svg>
-	</button>
+	<div class="card-actions">
+		<button class="action-btn" onclick={handleDownload} title={file.isDirectory ? 'Download as ZIP' : 'Download'}>
+			<svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+				<path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+			</svg>
+		</button>
+		{#if onDelete}
+			<button
+				class="action-btn delete-btn"
+				class:confirm={showConfirm}
+				onclick={handleDeleteClick}
+				title={showConfirm ? 'Click again to confirm' : 'Delete'}
+				disabled={isDeleting}
+			>
+				{#if isDeleting}
+					<span class="spinner-sm"></span>
+				{:else if showConfirm}
+					<svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+						<path d="M3 8l4 4 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				{:else}
+					<svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+						<path d="M3 5h10M6 5V3.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V5m1.5 0l-.5 8a1 1 0 01-1 1h-4a1 1 0 01-1-1l-.5-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				{/if}
+			</button>
+		{/if}
+	</div>
 </div>
 
 <style>
@@ -82,6 +122,11 @@
 
 	.file-card:active {
 		transform: translateY(0) scale(0.995);
+	}
+
+	.file-card.deleting {
+		opacity: 0.4;
+		pointer-events: none;
 	}
 
 	.card-link {
@@ -135,15 +180,63 @@
 		margin: 0 0.25rem;
 	}
 
-	.download-btn {
-		padding: 0.75rem;
-		color: var(--text-tertiary);
-		transition: all 0.25s var(--spring-ease);
+	.card-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.1rem;
+		padding-right: 0.4rem;
 		flex-shrink: 0;
 	}
 
-	.download-btn:hover {
+	.action-btn {
+		width: 30px;
+		height: 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--glass-radius-xs);
+		color: var(--text-tertiary);
+		transition: all 0.25s var(--spring-ease);
+		cursor: pointer;
+		border: none;
+		background: none;
+		font-family: inherit;
+	}
+
+	.action-btn:hover {
 		color: var(--text-primary);
-		background: rgba(255, 255, 255, 0.06);
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.action-btn:active {
+		transform: scale(0.9);
+	}
+
+	.delete-btn:hover {
+		color: rgba(255, 100, 100, 0.9);
+	}
+
+	.delete-btn.confirm {
+		color: rgba(255, 100, 100, 1);
+		background: rgba(255, 60, 60, 0.15);
+		animation: pulse 0.6s ease-in-out infinite alternate;
+	}
+
+	@keyframes pulse {
+		from { background: rgba(255, 60, 60, 0.1); }
+		to { background: rgba(255, 60, 60, 0.2); }
+	}
+
+	.spinner-sm {
+		width: 12px;
+		height: 12px;
+		border: 1.5px solid rgba(255, 255, 255, 0.2);
+		border-top-color: white;
+		border-radius: 50%;
+		animation: spin 0.6s linear infinite;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
 	}
 </style>

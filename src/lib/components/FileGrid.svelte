@@ -2,9 +2,11 @@
 	import FileCard from './FileCard.svelte';
 	import { fly } from 'svelte/transition';
 
-	let { files = [], onPreview = null }: {
+	let { files = [], onPreview = null, onDelete = null, deleting = null }: {
 		files?: any[];
 		onPreview?: ((file: any) => void) | null;
+		onDelete?: ((file: any) => void) | null;
+		deleting?: string | null;
 	} = $props();
 </script>
 
@@ -16,7 +18,7 @@
 {:else}
 	<div class="file-grid">
 		{#each files as file, i (file.path)}
-			<FileCard {file} index={i} {onPreview} />
+			<FileCard {file} index={i} {onPreview} {onDelete} isDeleting={deleting === file.path} />
 		{/each}
 	</div>
 {/if}
