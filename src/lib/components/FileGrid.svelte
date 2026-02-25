@@ -1,6 +1,7 @@
 <script lang="ts">
 	import FileCard from './FileCard.svelte';
-	import { fly } from 'svelte/transition';
+	import TextMorph from '$lib/components/TextMorph.svelte';
+	import { fly, fade } from 'svelte/transition';
 
 	let { files = [], onPreview = null, onDelete = null, deleting = null }: {
 		files?: any[];
@@ -12,8 +13,14 @@
 
 {#if files.length === 0}
 	<div class="empty" in:fly={{ y: 20, duration: 400 }}>
-		<span class="empty-icon">{'\u{1F4C2}'}</span>
-		<p>This folder is empty</p>
+		<span class="empty-icon" in:fade={{ duration: 600, delay: 100 }}>{'\u{1F4C2}'}</span>
+		<TextMorph
+			text="This folder is empty"
+			duration={450}
+			ease="cubic-bezier(0.19, 1, 0.22, 1)"
+			as="p"
+			class="empty-text"
+		/>
 	</div>
 {:else}
 	<div class="file-grid">
@@ -46,7 +53,7 @@
 		opacity: 0.5;
 	}
 
-	.empty p {
+	.empty :global(.empty-text) {
 		font-size: 0.95rem;
 	}
 </style>

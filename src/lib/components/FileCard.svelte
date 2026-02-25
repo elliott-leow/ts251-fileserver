@@ -2,6 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { elasticOut } from 'svelte/easing';
 	import { getFileIcon, formatSize, formatDate } from '$lib/utils/format';
+	import TextMorph from '$lib/components/TextMorph.svelte';
 
 	let { file, index = 0, onPreview = null, onDelete = null, isDeleting = false }: {
 		file: any;
@@ -14,6 +15,9 @@
 	let showConfirm = $state(false);
 	let icon = $derived(getFileIcon(file.type));
 	let href = $derived(file.isDirectory ? `/browse${file.path}` : null);
+	let metaText = $derived(
+		file.isDirectory ? `Folder` : formatSize(file.size)
+	);
 
 	function handleClick(e: MouseEvent) {
 		if (!file.isDirectory && onPreview) {
@@ -40,7 +44,6 @@
 			showConfirm = false;
 		} else {
 			showConfirm = true;
-			// Auto-hide confirm after 3s
 			setTimeout(() => { showConfirm = false; }, 3000);
 		}
 	}
@@ -64,13 +67,19 @@
 		<div class="card-info">
 			<span class="card-name">{file.name}</span>
 			<span class="card-meta">
-				{#if file.isDirectory}
-					Folder
-				{:else}
-					{formatSize(file.size)}
-				{/if}
+				<TextMorph
+					text={metaText}
+					duration={300}
+					ease="cubic-bezier(0.19, 1, 0.22, 1)"
+					as="span"
+				/>
 				<span class="dot">&middot;</span>
-				{formatDate(file.modified)}
+				<TextMorph
+					text={formatDate(file.modified)}
+					duration={300}
+					ease="cubic-bezier(0.19, 1, 0.22, 1)"
+					as="span"
+				/>
 			</span>
 		</div>
 	</a>
@@ -174,6 +183,9 @@
 	.card-meta {
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
+		display: flex;
+		align-items: center;
+		gap: 0;
 	}
 
 	.dot {

@@ -1,95 +1,225 @@
-# NAS File Viewer
+# TS-251+ File Server
 
-A glassmorphism file viewer for QNAP NAS, served through Cloudflare Tunnel.
+A glassmorphic file server built with SvelteKit for the QNAP TS-251+ NAS. Features smooth text morphing animations (torph), JWT authentication, file previews, and Docker deployment.
 
-## Features
-
-- iOS 26-inspired liquid glass UI
-- Animated text morphing with torph
-- File browsing with preview (images, video, audio, PDF, code)
-- Download files or entire folders as ZIP
-- Password-protected access
-- Smooth animations throughout
-
-## Quick Start (Local Dev)
+## Quick Start
 
 ```bash
 npm install
-cp .env.example .env  # Edit with your settings
+cp .env.example .env  # Edit with your values
 npm run dev
 ```
 
+Open `http://localhost:5173` and log in with the password from `.env`.
+
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FILE_SERVER_PASSWORD` | Login password | `admin` |
-| `FILE_ROOT` | Directory to serve | `/share/Public` |
-| `JWT_SECRET` | Secret for signing auth tokens | `fallback-dev-secret` |
-| `PORT` | Server port | `3000` |
-| `TUNNEL_TOKEN` | Cloudflare Tunnel token (Docker only) | - |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `FILE_SERVER_PASSWORD` | Yes | `admin` | Login password |
+| `FILE_ROOT` | Yes | — | Absolute path to the directory to serve |
+| `JWT_SECRET` | Yes | — | Secret for signing JWT tokens |
+| `PORT` | No | `3000` | Server port (production) |
+| `DELETE_PASSWORD` | No | — | Separate password for file deletion. If empty, delete works without extra auth |
+| `ORIGIN` | No | — | Production origin URL (e.g. `http://192.168.1.103:3000`) |
 
-## Deploy to QNAP NAS
-
-### Prerequisites
-
-- QNAP TS-251+ (or similar) with Container Station installed
-- Docker and Docker Compose available via SSH
-- A domain with Cloudflare DNS (for tunnel)
-
-### Steps
-
-1. **SSH into your NAS:**
-   ```bash
-   ssh admin@<nas-ip>
-   ```
-
-2. **Clone or copy the project:**
-   ```bash
-   cd /share/Public
-   git clone <your-repo-url> fileserver
-   cd fileserver
-   ```
-
-3. **Create `.env` file:**
-   ```bash
-   cat > .env << 'EOF'
-   FILE_SERVER_PASSWORD=your-strong-password
-   JWT_SECRET=$(openssl rand -hex 32)
-   TUNNEL_TOKEN=your-cloudflare-tunnel-token
-   EOF
-   ```
-
-4. **Set up Cloudflare Tunnel:**
-   - Go to [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com)
-   - Navigate to Networks > Tunnels
-   - Create a new tunnel, choose "Cloudflared" connector
-   - Copy the tunnel token
-   - Add a public hostname (e.g., `files.yourdomain.com`)
-   - Set service to `http://fileserver:3000`
-   - Paste the token in your `.env` as `TUNNEL_TOKEN`
-
-5. **Edit `docker-compose.yml` volume mount:**
-   Change `/share/Public:/data:ro` to point to the directory you want to serve.
-
-6. **Start the services:**
-   ```bash
-   docker compose up -d
-   ```
-
-7. **Access your files at** `https://files.yourdomain.com`
-
-### Updating
+## Docker Deployment
 
 ```bash
-cd /share/Public/fileserver
-git pull
-docker compose up -d --build
+docker build -t fileserver .
+
+docker run -d \
+  --name fileserver \
+  -p 3000:3000 \
+  -e FILE_SERVER_PASSWORD=yourpassword \
+  -e JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))") \
+  -e DELETE_PASSWORD=yoursecretdeletepass \
+  -e FILE_ROOT=/data \
+  -e ORIGIN=http://your-nas-ip:3000 \
+  -v /path/to/files:/data:ro \
+  --restart unless-stopped \
+  fileserver
+```
+
+Remove `:ro` from the volume mount to enable uploads, folder creation, and deletion.
+
+## API Reference
+
+All API endpoints (except login) require authentication via the `auth_token` cookie.
+
+### Authentication
+
+#### `POST /api/auth/login`
+
+Log in and receive a session cookie.
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"password": "yourpassword"}' \
+  -c cookies.txt
+```
+
+**Response:** `{"success": true}` with `Set-Cookie: auth_token=...`
+
+#### `POST /api/auth/logout`
+
+Clear the session cookie.
+
+```bash
+curl -X POST http://localhost:3000/api/auth/logout -b cookies.txt
+```
+
+### File Listing
+
+#### `GET /api/files/:path`
+
+List directory contents. Hidden files (starting with `.`) are filtered out.
+
+```bash
+# List root
+curl http://localhost:3000/api/files -b cookies.txt
+
+# List subdirectory
+curl http://localhost:3000/api/files/Documents/Photos -b cookies.txt
+```
+
+**Response:**
+```json
+{
+  "path": "/Documents/Photos",
+  "files": [
+    {
+      "name": "vacation.jpg",
+      "path": "/Documents/Photos/vacation.jpg",
+      "isDirectory": false,
+      "size": 2048576,
+      "modified": "2026-02-20T10:30:00.000Z",
+      "extension": ".jpg",
+      "type": "image"
+    }
+  ]
+}
+```
+
+**File types:** `folder`, `image`, `video`, `audio`, `document`, `code`, `archive`, `pdf`, `text`, `other`
+
+### File Download
+
+#### `GET /api/download/:path`
+
+Download a file. Add `?inline` to serve for preview (sets `Content-Disposition: inline`).
+
+```bash
+# Download
+curl -OJ http://localhost:3000/api/download/Documents/report.pdf -b cookies.txt
+
+# Preview (inline)
+curl http://localhost:3000/api/download/Documents/report.pdf?inline -b cookies.txt
+```
+
+### Folder Download
+
+#### `GET /api/download-zip/:path`
+
+Download an entire folder as a ZIP archive. Streamed, no temp files.
+
+```bash
+curl -o photos.zip http://localhost:3000/api/download-zip/Documents/Photos -b cookies.txt
+```
+
+### Upload Files
+
+#### `POST /api/upload/:path`
+
+Upload files via multipart form data. The `:path` is the target directory.
+
+```bash
+# Upload to root
+curl -X POST http://localhost:3000/api/upload \
+  -F "files=@photo.jpg" \
+  -F "files=@document.pdf" \
+  -b cookies.txt
+
+# Upload to subdirectory
+curl -X POST http://localhost:3000/api/upload/Documents \
+  -F "files=@report.docx" \
+  -b cookies.txt
+```
+
+**Response:** `{"uploaded": ["photo.jpg", "document.pdf"], "count": 2}`
+
+### Create Folder
+
+#### `POST /api/mkdir/:path`
+
+Create a new folder inside the given path.
+
+```bash
+curl -X POST http://localhost:3000/api/mkdir/Documents \
+  -H "Content-Type: application/json" \
+  -d '{"name": "New Folder"}' \
+  -b cookies.txt
+```
+
+**Response:** `{"success": true, "name": "New Folder"}`
+
+### Delete
+
+#### `GET /api/delete-config`
+
+Check if delete operations require a separate password.
+
+```bash
+curl http://localhost:3000/api/delete-config -b cookies.txt
+```
+
+**Response:** `{"requiresPassword": true}`
+
+#### `DELETE /api/delete/:path`
+
+Delete a file or folder (recursive). If `DELETE_PASSWORD` is set, you must include it in the request body.
+
+```bash
+# Without delete password
+curl -X DELETE http://localhost:3000/api/delete/Documents/old-file.txt -b cookies.txt
+
+# With delete password
+curl -X DELETE http://localhost:3000/api/delete/Documents/old-file.txt \
+  -H "Content-Type: application/json" \
+  -d '{"deletePassword": "yoursecretdeletepass"}' \
+  -b cookies.txt
+```
+
+**Response:** `{"success": true}`
+
+**Error (wrong password):** `{"error": "Invalid delete password", "requiresPassword": true}` (403)
+
+## QNAP TS-251+ Notes
+
+The QNAP Docker wrapper has a bug where `-t` flags don't work. Use the real binary directly:
+
+```bash
+DOCKER="/share/CACHEDEV1_DATA/.qpkg/container-station/usr/bin/.libs/docker"
+
+$DOCKER build -t fileserver .
+$DOCKER run -d --name fileserver \
+  -p 3000:3000 \
+  -e FILE_SERVER_PASSWORD=1205 \
+  -e JWT_SECRET=your-secret \
+  -e DELETE_PASSWORD=your-delete-pass \
+  -e FILE_ROOT=/data \
+  -e ORIGIN=http://192.168.1.103:3000 \
+  -v /share/Public:/data:ro \
+  --restart unless-stopped \
+  fileserver
 ```
 
 ## Tech Stack
 
-- SvelteKit (Node adapter)
-- torph (animated text morphing)
-- archiver (ZIP streaming)
-- Cloudflare Tunnel (secure public access)
+- **SvelteKit** with Svelte 5 runes
+- **torph** for text morphing animations
+- **JWT** authentication with HTTP-only cookies
+- **archiver** for streaming ZIP creation
+- **Node adapter** for production builds
+- **Docker** multi-stage builds

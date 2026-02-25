@@ -4,9 +4,19 @@ import { env } from '$env/dynamic/private';
 
 const JWT_SECRET = env.JWT_SECRET || 'fallback-dev-secret';
 const PASSWORD = env.FILE_SERVER_PASSWORD || 'admin';
+const DELETE_PASSWORD = env.DELETE_PASSWORD || '';
 
 export async function verifyPassword(input: string): Promise<boolean> {
 	return input === PASSWORD;
+}
+
+export async function verifyDeletePassword(input: string): Promise<boolean> {
+	if (!DELETE_PASSWORD) return false;
+	return input === DELETE_PASSWORD;
+}
+
+export function isDeleteProtected(): boolean {
+	return !!DELETE_PASSWORD;
 }
 
 export function createToken(): string {

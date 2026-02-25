@@ -1,30 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600&display=swap');
+
 :root {
-	--glass-bg: rgba(255, 255, 255, 0.08);
-	--glass-bg-hover: rgba(255, 255, 255, 0.14);
-	--glass-bg-active: rgba(255, 255, 255, 0.18);
-	--glass-border: rgba(255, 255, 255, 0.12);
-	--glass-border-hover: rgba(255, 255, 255, 0.22);
+	--glass-bg: rgba(255, 255, 255, 0.07);
+	--glass-bg-hover: rgba(255, 255, 255, 0.12);
+	--glass-bg-active: rgba(255, 255, 255, 0.16);
+	--glass-border: rgba(255, 255, 255, 0.1);
+	--glass-border-hover: rgba(255, 255, 255, 0.2);
 	--glass-blur: blur(40px) saturate(180%);
 	--glass-blur-light: blur(20px) saturate(150%);
 	--glass-radius: 18px;
 	--glass-radius-sm: 12px;
 	--glass-radius-xs: 8px;
-	--glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
-	--glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
+	--glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1),
+		inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	--glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.12),
+		inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
 	--text-primary: rgba(255, 255, 255, 0.95);
 	--text-secondary: rgba(255, 255, 255, 0.6);
-	--text-tertiary: rgba(255, 255, 255, 0.4);
+	--text-tertiary: rgba(255, 255, 255, 0.35);
 
 	--accent: rgba(120, 180, 255, 0.9);
-	--accent-glow: rgba(120, 180, 255, 0.3);
+	--accent-glow: rgba(120, 180, 255, 0.2);
+	--danger: rgba(255, 100, 100, 0.9);
+	--success: rgba(100, 210, 140, 0.9);
 
 	--spring-ease: cubic-bezier(0.19, 1, 0.22, 1);
 	--bounce-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
 	--smooth-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
-	font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	color: var(--text-primary);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 *, *::before, *::after {
@@ -36,7 +44,7 @@
 body {
 	min-height: 100vh;
 	overflow: hidden;
-	background: #0a0a0f;
+	background: #08080d;
 }
 
 button {
@@ -61,16 +69,29 @@ a {
 	box-shadow: var(--glass-shadow);
 }
 
+/* Selection styling */
+::selection {
+	background: rgba(120, 180, 255, 0.25);
+	color: white;
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar {
-	width: 6px;
+	width: 5px;
 }
 ::-webkit-scrollbar-track {
 	background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-	background: rgba(255, 255, 255, 0.15);
+	background: rgba(255, 255, 255, 0.12);
 	border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-	background: rgba(255, 255, 255, 0.25);
+	background: rgba(255, 255, 255, 0.22);
+}
+
+/* Firefox scrollbar */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
