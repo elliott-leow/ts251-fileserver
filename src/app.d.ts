@@ -10,4 +10,26 @@ declare global {
 	}
 }
 
+declare module 'torph/svelte' {
+	import type { SvelteComponent } from 'svelte';
+
+	interface TextMorphProps {
+		text: string;
+		class?: string;
+		style?: string;
+		as?: string;
+		duration?: number;
+		ease?: string;
+		debug?: boolean;
+		disabled?: boolean;
+		locale?: Intl.LocalesArgument;
+		scale?: boolean;
+		respectReducedMotion?: boolean;
+		onAnimationStart?: () => void;
+		onAnimationComplete?: () => void;
+	}
+
+	export class TextMorph extends SvelteComponent<TextMorphProps> {}
+}
+
 export {};
