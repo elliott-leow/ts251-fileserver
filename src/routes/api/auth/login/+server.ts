@@ -11,10 +11,14 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	const token = createToken();
+	// secure: only over HTTPS (Cloudflare tunnel), not plain HTTP (local network)
+	const isHttps = request.headers.get('x-forwarded-proto') === 'https'
+		|| request.url.startsWith('https');
+
 	cookies.set('auth_token', token, {
 		path: '/',
 		httpOnly: true,
-		secure: !dev,
+		secure: isHttps,
 		sameSite: 'lax',
 		maxAge: 60 * 60 * 24 * 7
 	});
