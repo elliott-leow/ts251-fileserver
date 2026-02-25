@@ -2,9 +2,10 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { safePath } from '$lib/server/files';
 import { mkdir } from 'fs/promises';
+import { join } from 'path';
 
 export const POST: RequestHandler = async ({ params, request }) => {
-	const requestedPath = params.path || '';
+	const requestedPath = params.path ?? '';
 	const dirPath = safePath(requestedPath);
 
 	if (!dirPath) throw error(403, 'Access denied');
@@ -14,7 +15,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		throw error(400, 'Invalid folder name');
 	}
 
-	const fullPath = safePath(requestedPath + '/' + name);
+	const fullPath = safePath(join(requestedPath, name));
 	if (!fullPath) throw error(403, 'Access denied');
 
 	try {

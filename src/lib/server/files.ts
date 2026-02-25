@@ -42,9 +42,10 @@ function getFileType(ext: string, isDir: boolean): FileType {
 	return EXT_MAP[ext.toLowerCase()] || 'other';
 }
 
-export function safePath(requestedPath: string): string | null {
+export function safePath(requestedPath: string | undefined): string | null {
 	const root = resolve(FILE_ROOT);
-	const full = resolve(root, requestedPath);
+	const p = requestedPath || '';
+	const full = resolve(root, p);
 	if (!full.startsWith(root)) return null;
 	return full;
 }

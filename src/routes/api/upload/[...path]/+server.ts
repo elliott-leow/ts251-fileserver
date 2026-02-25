@@ -5,7 +5,7 @@ import { writeFile } from 'fs/promises';
 import { join, basename } from 'path';
 
 export const POST: RequestHandler = async ({ params, request }) => {
-	const requestedPath = params.path || '';
+	const requestedPath = params.path ?? '';
 	const dirPath = safePath(requestedPath);
 
 	if (!dirPath) throw error(403, 'Access denied');
@@ -23,13 +23,11 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const name = basename(file.name);
 		if (!name || name.startsWith('.')) continue;
 
-		const dest = join(dirPath, name);
-		// Verify the destination is still within the safe root
-		const safeDest = safePath(requestedPath + '/' + name);
+		const safeDest = safePath(join(requestedPath, name));
 		if (!safeDest) continue;
 
 		const buffer = Buffer.from(await file.arrayBuffer());
-		await writeFile(dest, buffer);
+		await writeFile(safeDest, buffer);
 		uploaded.push(name);
 	}
 
